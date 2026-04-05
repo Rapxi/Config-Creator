@@ -5,6 +5,7 @@ import threading
 import customtkinter as ctk
 from webbrowser import open as webopen
 from CTkMessagebox import CTkMessagebox
+import subprocess
 
 # Credits to my goat the Big L hes so tuff, thanks for the idea this is heavily inspired but you cant really change that much. I only know ctk as a gui library :sob:
 
@@ -14,7 +15,13 @@ def main():
     app.title("Config Creator") 
     app.resizable(False, False) 
     
-    Gamemodes = ["BossRush", "Bounty", "Challenge", "Custom", "Default", "Dungeon", "Event", "Infinite", "LegendStage", "Odyseey", "Portal", "Raid", "Rift", "Story", "Worldline"]
+    
+    
+    Version = 1.0
+    UpdBtn = ctk.CTkButton(app, text=f"Update\n{Version}", font=ctk.CTkFont(size=14, weight="bold"), command=lambda: subprocess.run(["powershell", "-ExecutionPolicy", "Bypass", "-File", "Update.ps1"]))
+    UpdBtn.place(x=425, y=530)
+    
+    Gamemodes = ["None", "BossRush", "Bounty", "Challenge", "Custom", "Default", "Dungeon", "Event", "Infinite", "LegendStage", "Odyseey", "Portal", "Raid", "Rift", "Story", "Worldline"]
     MapBossRush = ["Blood_Red_Chamber", "Dark_Tainted_Tyrant", "Shibuya_Aftermath", "Rumbling_Event"]
     MapBountyChallange = ["Burning_Spirit_Tree", "Crystal_Chapel", "Double_Dungeon", "Downtown_Tokyo", "Edge_of_Heaven", "Frozen_Port", "Golden_Castle", "Hill_of_Swords", "Imprisoned_Island", "Kuinshi_Palace", "Lebereo_Raid", "Martial_Island", "Planet_Namek", "Sand_Village", "Shibuya_Aftermath", "Shibuya_Station", "Shining_Castle", "Spirit_Society", "The_Land_of_Gods", "Tokyo_Railway", "Underground_Church"]
     MapCustom = ["Blood_Red_Chamber", "Burning_Spirit_Tree", "Crystal_Chapel", "Dark_Tainted_Tyrant", "Double_Dungeon", "Downtown_Tokyo", "Dried_Lake", "Edge_of_Heaven", "Frozen_Port", "Frozen_Volcano", "Golden_Castle", "HAPPY_Factory", "Hill_of_Swords", "Imprisoned_Island", "Jeju_Island", "Jojo", "Jojo_2", "Kuinshi_Palace", "Lebereo_Raid", "Lich_Kings_Throne", "Martial_Island", "Mountain_Shrine", "Old_Lobby", "Old_Namek", "Planet_Namek", "Planet_Namek_Spring", "Ruined_City", "Rumbling_Event", "Sand_Village", "Shibuya_Aftermath", "Blood_Red_Chamber", "Burning_Spirit_Tree", "Crystal_Chapel", "Dark_Tainted_Tyrant", "Double_Dungeon", "Downtown_Tokyo", "Dried_Lake", "Edge_of_Heaven", "Frozen_Port", "Frozen_Volcano", "Golden_Castle", "HAPPY_Factory", "Hill_of_Swords", "Imprisoned_Island", "Jeju_Island", "Jojo", "Jojo_2", "Kuinshi_Palace", "Lebereo_Raid", "Lich_Kings_Throne", "Martial_Island", "Mountain_Shrine", "Old_Lobby", "Old_Namek", "Planet_Namek", "Planet_Namek_Spring", "Ruined_City", "Rumbling_Event", "Sand_Village", "Shibuya_Aftermath",
@@ -31,16 +38,17 @@ def main():
     MapRift = ["Imprisoned_Island", "Kuinshi_Palace", "Mountain_Shrine", "Underground_Church"]
     MapStory = ["Double_Dungeon", "Downtown_Tokyo", "Edge_of_Heaven", "Frozen_Port", "Hill_of_Swords", "Lebereo_Raid", "Martial_Island", "Planet_Namek", "Sand_Village", "Shibuya_Station", "Spirit_Society", "Underground_Church"]
     
-    GameModeOpt = ctk.CTkOptionMenu(app, font=ctk.CTkFont(size=14, weight="bold"), values=Gamemodes)
-    GameModeOpt.place(x=535, y=400)
+    GameModeOpt = ctk.CTkOptionMenu(app, width=200, height=45, values=Gamemodes)
+    GameModeOpt.place(x=505, y=400)
 
-    MapOpt = ctk.CTkOptionMenu(app, font=ctk.CTkFont(size=14, weight="bold"), values=["None"])
-    MapOpt.place(x=535, y=450)
+    MapOpt = ctk.CTkOptionMenu(app, values=["None"])
+    MapOpt.place(x=535, y=465)
 
     def on_change(selected=None):
         if selected is None:
             selected = GameModeOpt.get()
         match selected:
+            case "None": MapOpt.configure(values=["None"])
             case "Boss Rush": MapOpt.configure(values=MapBossRush)
             case "Bounty": MapOpt.configure(values=MapBountyChallange)
             case "Challenge": MapOpt.configure(values=MapBountyChallange)
