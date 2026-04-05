@@ -168,8 +168,8 @@ def main():
                         {
                             "role": "system",
                             "content": (
-                                system_prompt
-                                + '\n on the predefined slots if the prompt says "Alocard" instead of "Slot 1" and the Slot 1 value is Alocard you use Slot 1 in the output '
+                                system_prompt +
+                                'each action is seperated by an "," '+ '\n on the predefined slots if the prompt says "Alocard" instead of "Slot 1" and the Slot 1 value is Alocard you use Slot 1 in the output '
                                   "the value assigned to it:\n"
                                 + slots_str
                             ),
