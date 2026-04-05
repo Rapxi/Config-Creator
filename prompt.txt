@@ -1,0 +1,151 @@
+CONFIG FORMAT SPECIFICATION
+
+Each line in the file represents one command.
+
+Each line MUST contain exactly 7 fields separated by the "|" character:
+
+Slot|Unit|Upgrade|Priority|Action|Delay|Wave
+
+---
+
+FIELD 1: Slot
+Allowed values:
+
+* Slot 1
+* Slot 2
+* Slot 3
+* Slot 4
+* Slot 5
+* Slot 6
+* None
+
+---
+
+FIELD 2: Unit
+Allowed values:
+
+* Unit 1
+* Unit 2
+* Unit 3
+* Unit 4
+* Unit 5
+* None
+
+---
+
+FIELD 3: Upgrade
+Allowed values:
+
+* 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14
+* Max
+* Auto
+* Same
+
+Definitions:
+
+* Number → set exact upgrade level
+* Max → upgrade to maximum level
+* Auto → automatically upgrade over time
+* Same → reuse last Upgrade value used for the same Slot+Unit
+
+---
+
+FIELD 4: Priority
+Allowed values:
+
+* None
+* Same
+* Bosses
+* Closest
+* First
+* Last
+* Strongest
+* Weakest
+
+Definitions:
+
+* Same → reuse last Priority for the same Slot+Unit
+* None → do not modify targeting
+
+---
+
+FIELD 5: Action
+Allowed values:
+
+* None
+* Place
+* Special Ability
+* Restart
+* Ability 1
+* Ability 2
+* VSJW 1
+* VSJW 2
+* VSJW 3
+* Swap
+* Sell
+
+---
+
+FIELD 6: Delay
+
+* Integer ≥ 0
+* Defines delay BEFORE executing this line
+* Unit is abstract time step
+
+---
+
+FIELD 7: Wave
+
+* Integer ≥ 0
+
+Rules:
+
+* 0 → execute without wave restriction
+* > 0 → execute only when current wave equals this value
+
+---
+
+EXECUTION RULES
+
+1. Lines are processed sequentially from top to bottom.
+
+2. A line executes only when:
+
+   * Its Wave condition is satisfied
+   * Its Delay time has passed
+
+3. "Same" values:
+
+   * Refer to the most recent previous line affecting the SAME Slot AND Unit
+   * If no previous value exists, treat as None
+
+4. "None" behavior:
+
+   * Slot=None OR Unit=None → entire line is ignored
+   * Action=None → no action performed
+   * Priority=None → no targeting change
+
+5. Lines with:
+   None|None|0|None|None|0|0
+   are NO-OP lines and must be ignored.
+
+6. All fields are case-sensitive and must match exactly.
+
+7. Each line must contain exactly 6 "|" separators (7 fields total). Invalid lines must be rejected.
+
+---
+
+OUTPUT REQUIREMENTS
+
+* Always output valid lines only
+* Do not add comments
+* Do not add extra spaces
+* Do not omit fields
+* Do not invent new values
+* Preserve exact format
+
+---
+
+EXAMPLE VALID LINE
+
+Slot 1|Unit 1|0|None|Place|0|1
