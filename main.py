@@ -6,16 +6,14 @@ import customtkinter as ctk
 from webbrowser import open as webopen
 from CTkMessagebox import CTkMessagebox
 import subprocess
-
+ 
 # Credits to my goat the Big L hes so tuff, thanks for the idea this is heavily inspired but you cant really change that much. I only know ctk as a gui library :sob:
-
+ 
 def main():
     app = ctk.CTk()
     app.geometry("1120x620") 
     app.title("Config Creator") 
     app.resizable(False, False) 
-    
-    
     
     Version = 1.0
     UpdBtn = ctk.CTkButton(app, text=f"Update\n{Version}", font=ctk.CTkFont(size=14, weight="bold"), command=lambda: subprocess.run(["powershell", "-ExecutionPolicy", "Bypass", "-File", "Update.ps1"]))
@@ -40,10 +38,10 @@ def main():
     
     GameModeOpt = ctk.CTkOptionMenu(app, width=200, height=45, values=Gamemodes)
     GameModeOpt.place(x=505, y=400)
-
+ 
     MapOpt = ctk.CTkOptionMenu(app, values=["None"])
     MapOpt.place(x=535, y=465)
-
+ 
     def on_change(selected=None):
         if selected is None:
             selected = GameModeOpt.get()
@@ -65,10 +63,9 @@ def main():
             case "Story": MapOpt.configure(values=MapStory)
             
         MapOpt.set("None")
-
+ 
     GameModeOpt.configure(command=on_change)
-
-
+ 
     ctk.CTkLabel(app, text="Output", font=ctk.CTkFont(size=14, weight="bold")).place(x=25, y=10) 
     output_txt = ctk.CTkTextbox(app, width=220, height=480, state="disabled")
     output_txt.place(x=25, y=40)
@@ -80,7 +77,7 @@ def main():
             with open(f"Data/Config/{Gamemode}/{Map}/{Map}_Strategy.txt", "w") as w:
                 text = output_txt.get("1.0", "end-1c")
                 w.write(text)
-        except FileNotFoundError: # these will create the folders if they dont exist
+        except FileNotFoundError:
             os.makedirs(f"Data/Config/{Gamemode}", exist_ok=True)
             os.makedirs(f"Data/Config/{Gamemode}/{Map}", exist_ok=True)
             with open(f"Data/Config/{Gamemode}/{Map}/{Map}_Strategy.txt", "w") as w:
@@ -93,7 +90,7 @@ def main():
     ctk.CTkLabel(app, text="Prompt", font=ctk.CTkFont(size=14, weight="bold")).place(x=290, y=10)
     prompt_txt = ctk.CTkTextbox(app, width=380, height=180)
     prompt_txt.place(x=265, y=40)
-
+ 
     ctk.CTkLabel(app, text="Slot Context  (optional)", font=ctk.CTkFont(size=12, weight="bold")).place(x=265, y=235)
     slot_entries: dict[str, ctk.CTkEntry] = {}
     col_x = [265, 475]   
@@ -107,53 +104,50 @@ def main():
         entry = ctk.CTkEntry(app, width=entry_width, placeholder_text="unit name")
         entry.place(x=x + label_width, y=y)
         slot_entries[f"Slot {i}"] = entry
-
-    
+ 
     def _show_output(text: str) -> None:
         output_txt.configure(state="normal")
         output_txt.delete("0.0", "end")
         output_txt.insert("0.0", text)
         output_txt.configure(state="disabled")
-
+ 
     def _show_error(msg: str) -> None:
         error_txt.configure(state="normal")
         error_txt.delete("0.0", "end")
         error_txt.insert("0.0", msg)
         error_txt.configure(state="disabled")
-
+ 
     def _clear_error() -> None:
         error_txt.configure(state="normal")
         error_txt.delete("0.0", "end")
         error_txt.configure(state="disabled")
-
-
+ 
     def send() -> None:
         api_key = api_key_entry.get().strip()
         if not api_key:
             CTkMessagebox(title="No API Key", message="Please enter or load your API Key.")
             return
-
+ 
         describe_config = prompt_txt.get("0.0", "end").strip()
         if not describe_config:
             CTkMessagebox(title="Empty Prompt", message="Please enter a prompt first.")
             return
-
-        
+ 
         filled_slots = {k: v.get().strip() 
                         for k, v in slot_entries.items() 
                         if v.get().strip()}
         slots_str = str(filled_slots) if filled_slots else "No slot context provided."
-
+ 
         try:
             with open("prompt.txt", "r", encoding="utf-8") as f:
                 system_prompt = f.read()
         except FileNotFoundError:
             system_prompt = "You are a config creator assistant."
-
+ 
         send_btn.configure(state="disabled", text="Sending…")
         _show_output("Waiting for response…")
         _clear_error()
-
+ 
         def api_call() -> None:
             try:
                 headers = {
@@ -168,10 +162,42 @@ def main():
                         {
                             "role": "system",
                             "content": (
-                                system_prompt +
-                                'each action is seperated by an "," '+ '\n on the predefined slots if the prompt says "Alocard" instead of "Slot 1" and the Slot 1 value is Alocard you use Slot 1 in the output '
-                                  "the value assigned to it:\n"
+                                system_prompt
+                                + """
+ 
+---
+ 
+PARSING RULES FOR USER PROMPTS
+ 
+Each comma-separated item in the user prompt is one distinct action. Process them in order.
+ 
+SLOT NAME RESOLUTION:
+- The user may refer to slots by a custom name instead of "Slot N".
+- Use the mapping below to resolve the correct Slot field.
+- If no mapping exists for a name, ignore it.
+- Predefined slot mapping:
+"""
                                 + slots_str
+                                + """
+ 
+UNIT RANGE NOTATION:
+- "unit 1-3" means Unit 1, Unit 2, AND Unit 3 — generate one line per unit.
+- "unit 1" means only Unit 1.
+- Example: "place speed unit 1-3" → 3 lines, all using the slot mapped to "speed", with Unit 1, Unit 2, Unit 3.
+ 
+PLACE vs UPGRADE:
+- "place X unit N" → Action=Place, Upgrade=0 (do not set Max on a Place line unless explicitly told to place at max).
+- "upgrade X unit N max" → Action=None, Upgrade=Max (this is a separate line from Place).
+- Never combine a Place and a Max upgrade on the same line unless the user says "place and immediately upgrade to max".
+ 
+SEQUENCE:
+- Preserve the exact order the user listed actions.
+- Each comma-separated action becomes one or more lines in that order.
+ 
+OUTPUT:
+- Output only the raw config lines, nothing else.
+- No explanations, no comments, no blank lines.
+"""
                             ),
                         },
                         {"role": "user", "content": describe_config},
@@ -183,34 +209,50 @@ def main():
                     json=payload,
                     timeout=60,
                 )
-                data = loads(r.content.decode("utf-8"))
-
+ 
+                raw_text = r.content.decode("utf-8").strip()
+ 
+                if not raw_text:
+                    raise RuntimeError(
+                        f"Empty response from server (HTTP {r.status_code}).\n"
+                        "Check that your API key is valid and has access to GitHub Models."
+                    )
+ 
+                try:
+                    data = loads(raw_text)
+                except Exception:
+                    raise RuntimeError(
+                        f"Server returned non-JSON (HTTP {r.status_code}):\n{raw_text[:500]}"
+                    )
+ 
                 if "error" in data:
-                    raise RuntimeError(data["error"].get("message", str(data["error"])))
-
+                    raise RuntimeError(
+                        f"API error {r.status_code}: {data['error'].get('message', str(data['error']))}"
+                    )
+ 
                 text = data["choices"][0]["message"]["content"]
                 app.after(0, lambda: _show_output(text))
                 app.after(0, _clear_error)
-
+ 
             except Exception as exc:
                 app.after(0, lambda e=exc: _show_error(str(e)))
             finally:
                 app.after(0, lambda: send_btn.configure(state="normal", text="Send Prompt"))
-
+ 
         threading.Thread(target=api_call, daemon=True).start()
-
+ 
     send_btn = ctk.CTkButton(app, text="Send Prompt", width=200, height=45, command=send)
     send_btn.place(x=290, y=400)
-
+ 
     ctk.CTkButton(
         app, text="Get API Key", width=150, height=35,
         command=lambda: webopen("https://github.com/marketplace/models/azure-openai/gpt-4-1"),
     ).place(x=315, y=460)
-
+ 
     ctk.CTkLabel(app, text="API Key", font=ctk.CTkFont(size=14, weight="bold")).place(x=800, y=10)
     api_key_entry = ctk.CTkEntry(app, width=280, height=38, show="*", placeholder_text="Paste GitHub token…")
     api_key_entry.place(x=780, y=40)
-
+ 
     def load_key() -> None:
         if os.path.exists("key.txt"):
             with open("key.txt", "r") as f:
@@ -222,7 +264,7 @@ def main():
                 title="API Key not found",
                 message='No key.txt found.\nPaste your key above or press "Get API Key".',
             )
-
+ 
     def save_key() -> None:
         key = api_key_entry.get().strip()
         if not key:
@@ -231,20 +273,20 @@ def main():
         with open("key.txt", "w") as f:
             f.write(key)
         CTkMessagebox(title="Saved", message="API Key saved to key.txt.")
-
+ 
     load_key() 
-
+ 
     ctk.CTkButton(app, text="Load from file", width=130, height=32, command=load_key).place(x=780, y=90)
     ctk.CTkButton(app, text="Save to file",   width=130, height=32, command=save_key).place(x=920, y=90)
-
+ 
     ctk.CTkLabel(app, text="Errors", font=ctk.CTkFont(size=14, weight="bold")).place(x=800, y=135)
     error_txt = ctk.CTkTextbox(app, width=280, height=380, state="disabled")
     error_txt.place(x=780, y=165)
-
+ 
     on_change()
-
+ 
     app.mainloop()
-
-
+ 
+ 
 if __name__ == "__main__":
     main()
